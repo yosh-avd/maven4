@@ -1,0 +1,48 @@
+pipeline
+{
+    agent any
+    stages
+  {
+     stage('continuous download')
+    {
+      steps
+      {
+       git 'https://github.com/yosh-avd/maven3.git'
+      } 
+    }
+    stage('continuous build')
+    {
+      steps
+      {
+      sh 'mvn package'
+      }
+    }
+    stage('continuous deploy')
+    {
+      steps
+      {
+        deploy adapters: [tomcat9(credentialsId: 'ce56a8cd-ea3f-4305-9907-83027aed387e', path: '', url: 'http://172.31.30.9:8080')], contextPath: 'testavd1', war: '**/*.war'
+      }
+    }
+    stage('continuous testing')
+    {
+      steps
+      {
+        git 'https://github.com/yosh-avd/functional-testing.git'
+        sh 'java -jar /var/lib/jenkins/workspace/MyAVDDeclarativepost/testing.jar'
+      }
+    }
+  }
+ post
+   {
+      success
+       {
+          input id: 'myadmin', message: 'please approve delivery to test'
+          deploy adapters: [tomcat9(credentialsId: 'ce56a8cd-ea3f-4305-9907-83027aed387e', path: '', url: 'http://172.31.30.9:8080')], contextPath: 'testavd1', war: '**/*.war'
+       }
+      failure
+      {
+        mail bcc: '', body: 'CI CD failed please look into it', cc: '', from: '', replyTo: '', subject: 'CI/CD failed', to: 'garnaikyosh@gmail.com'  
+      }
+   }
+}

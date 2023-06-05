@@ -1,0 +1,98 @@
+pipeline 
+{
+	agent any
+	stages 
+	{
+		stage('ContDownload') 
+		{
+			steps
+			{
+				script 
+				{
+					try 
+					{
+						git 'https://github.com/yosh-avd/maven3.git'
+					}
+				    catch (Exception e1) 
+					{
+						mail bcc: '', body: 'GIT Admins,Continuous Download failed please check the repo', cc: '', from: '', replyTo: '', subject: 'Continuous Download failed', to: 'garnaikyosh@gmail.com'
+					}
+				}
+			}
+		}
+		stage('ContBuild') 
+		{
+			steps
+			{
+				script 
+				{
+					try 
+					{
+						sh label: '', script: 'mvn package'
+					} 
+				    catch (Exception e2)
+					{
+						mail bcc: '', body: 'Dev Team ,Continuous Build failed please check the repo', cc: '', from: '', replyTo: '', subject: 'Continuous Build failed', to: 'garnaikyosh@gmail.com'
+
+					}
+				}
+			}
+		}
+		stage('ContDeployment')
+		{
+			steps 
+			{
+				script 
+				{
+					try 
+					{
+						deploy adapters: [tomcat9(credentialsId: 'ce56a8cd-ea3f-4305-9907-83027aed387e', path: '', url: 'http://172.31.30.9:8080')], contextPath: 'testavd2', war: '**/*.war'
+					} 
+				  catch (Exception e3) 
+				   {
+						mail bcc: '', body: 'middleware continuous Deploy failed please check', cc: '', from: '', replyTo: '', subject: 'Continuous Deploy failed', to: 'garnaikyosh@gmail.com'
+
+					}
+				}
+			}
+		}
+		stage('ContTesting') 
+		{
+			steps 
+			{
+				script
+				{
+					try 
+					{
+						git 'https://github.com/yosh-avd/functional-testing.git'
+						sh 'java -jar  /var/lib/jenkins/workspace/MyAVDDeclarativeTrycatch/testing.jar'
+					} 
+				  catch (Exception e4)
+				   {
+						mail bcc: '', body: 'Test team,continuous Test failed please check', cc: '', from: '', replyTo: '', subject: 'Continuous Test failed', to: 'garnaikyosh@gmail.com'
+
+					}
+				}
+			}
+		}
+
+		stage('ContDelivery') 
+		{
+			steps 
+			{
+				script 
+				{
+					try 
+					    {
+						deploy adapters: [tomcat9(credentialsId: 'ce56a8cd-ea3f-4305-9907-83027aed387e', path: '', url: 'http://172.31.28.119:8080')], contextPath: 'devavd2', war: '**/*.war'
+					    } 
+				  catch (Exception e5) 
+					{
+						mail bcc: '', body: 'Delivery team,continuous Delivery failed please check', cc: '', from: '', replyTo: '', subject: 'Continuous Delivery failed', to: 'garnaikyosh@gmail.com'
+
+					}
+				}
+			}
+		}
+	}
+ }
